@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Définition du modèle Client
+model Client {
+  id_clt    Int    @id @default(autoincrement()) // Clé primaire
+  nom   String    @db.VarChar(100) 
+  prenom String  @db.VarChar(100) 
+  adresse String  @db.VarChar(100) 
+  ville String  @db.VarChar(100) 
+  telephone String  @unique  @db.VarChar(100) 
+  email String    @unique @db.VarChar(100) 
+
+  // Relation avec Facture et Commande
+  factures Facture[]
+  commandes Commande[]
+}
+
+// Définition du modèle Commande
+model Commande {
+  id_cmd     Int    @id @default(autoincrement()) // Clé primaire
+  datecom DateTime    @default(now())
+  id_clt       Int    // Clé étrangère pointant vers Client.id_Client
+
+  // Relations avec Client, Facture, et Contenir
+  client    Client   @relation(fields: [id_clt], references: [id_clt])
+  ligneCmd  ligneCommande[]
+  facture Facture[]
+}
+
+// Définition du modèle Fournisseur
+model Fournisseur {
+  id_fourni      Int    @id @default(autoincrement()) // Clé primaire
+  nom String                 @db.VarChar(100) 
+  siege_social String         @db.VarChar(100) 
+  date_creation DateTime  @db.Date 
+  id_fiscal String        @unique @db.VarChar(100) 
+  capital Int
+  nbr_emp Int            
+  ville String           @db.VarChar(100) 
+  responsable String     @db.VarChar(100) 
+  telephone String        @unique @db.VarChar(100) 
+  email String             @unique @db.VarChar(100) 
+
+  // Relation avec Facture
+  factures Facture[]
+  produits Produit[]
+}
+
+// Définition du modèle Produit
+model Produit {
+  id_prod     Int    @id @default(autoincrement()) // Clé primaire
+  pr_achat Float        
+  pr_vente Float
+  taux_marge Float
+  dimension String?     @db.VarChar(100) 
+  taille String?        @db.VarChar(100) 
+   id_fourni Int
+  // Relation avec LigneCommande
+  ligneCmd  ligneCommande[]
+    fournisseur Fournisseur @relation(fields: [id_fourni], references: [id_fourni])
+
+}
+
+// Définition du modèle Facture
+model Facture {
+  id_fact       Int    @id @default(autoincrement()) // Clé primaire
+  montantHT Float
+  montantTTC Float
+  echeance   Int
+  adresse    String     @db.VarChar(100)
+  TVA       Float       @default(0.2)
+  datefact DateTime     @default(now())
+  id_fourni  Int   // Clé étrangère pointant vers Fournisseur.id_Fournisseur
+  id_clt       Int   // Clé étrangère pointant vers Client.id_Client
+  id_cmd Int   @unique// Clé étrangère pointant vers Commande.id_Commande, nullable (pas nécessairement une commande pour chaque facture)
+
+  // Relations avec Fournisseur, Commande et Client
+  commande Commande @relation(fields: [id_cmd], references: [id_cmd])
+  fournisseur Fournisseur @relation(fields: [id_fourni], references: [id_fourni])
+  client      Client      @relation(fields: [id_clt], references: [id_clt])
+}
+
+// Définition du modèle Contenir (relation entre Commande et Produit)
+model ligneCommande {
+  id_ligneCmd  Int    @id @default(autoincrement()) // Clé primaire
+  id_cmd Int   // Clé étrangère pointant vers Commande.id_Commande
+  id_prod  Int   // Clé étrangère pointant vers Produit.id_Produit
+  qtecom Int
+
+  // Relations avec Commande et Produit
+  commande Commande @relation(fields: [id_cmd], references: [id_cmd])
+  produit  Produit  @relation(fields: [id_prod], references: [id_prod])
+}
